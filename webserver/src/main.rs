@@ -13,16 +13,20 @@ fn main() {
 
 fn handle_conn(mut stream: TcpStream) { // mutable ref to stream bc we need to write to it
     let buf_reader = BufReader::new(&stream);
-    let req: Vec<_> = buf_reader
+    let req = buf_reader
         .lines()
-        .map(|res| res.unwrap())
-        .take_while(|line| !line.is_empty())
-        .collect();
+        .next()
+        .unwrap()
+        .unwrap();
 
-    println!("req: {req:#?}");
 
-    let status = "HTTP/1.1 200 OK";
-    let content = fs::read_to_string("hello.html").unwrap();
+    let (status, filename) = if req == "GET / HTTP/1.1" {
+        ("HTTP/1.1 200 OK", "hello.html")
+    } else {
+        ("HTTP/1.1 404 NOT FOUND", "404.html")
+    };
+
+    let content = fs::read_to_string(filename).unwrap();
     let len = content.len();
 
     let resp = format!("{status}\r\nContent-Length: {len}\r\n\r\n{content}");
